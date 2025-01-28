@@ -127,23 +127,23 @@ jobs:
       if: (!cancelled())
       run: df -hT
 
-    #- name: Upload Bin Directory(上传固件)
-    #  if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
-    #  uses: actions/upload-artifact@main
-   #   with:
-   #     name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
-   #     path: ${{ env.OPENWRT_PATH }}/bin
+    - name: Upload Bin Directory(上传固件)
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
+        path: ${{ env.OPENWRT_PATH }}/bin
 
-  #  - name: Organize Files(整理文件)
-  #    if: steps.compile.outputs.status == 'success'
-  #    run: |
- #       cd $OPENWRT_PATH/bin/targets/*/*
+    - name: Organize Files(整理文件)
+      if: steps.compile.outputs.status == 'success'
+      run: |
+        cd $OPENWRT_PATH/bin/targets/*/*
         cat sha256sums
-  #      cp $OPENWRT_PATH/.config build.config
-  #     mv -f $OPENWRT_PATH/bin/packages/*/*/*.apk packages
-   #     tar -zcf Packages.tar.gz packages
-   #     rm -rf packages feeds.buildinfo version.buildinfo
-    #    echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
+        cp $OPENWRT_PATH/.config build.config
+        mv -f $OPENWRT_PATH/bin/packages/*/*/*.apk packages
+        tar -zcf Packages.tar.gz packages
+        rm -rf packages feeds.buildinfo version.buildinfo
+        echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
    # - name: Upload Firmware To Artifact(将固件上传到Artifact)
    #   if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
@@ -174,20 +174,7 @@ jobs:
         #  ### 🧊 固件版本
         #  - 固件编译前最后一次➦[主源码](${{ env.REPO_URL }})更新记录
         #  - ${{ env.VERSION_INFO }}
-    name: Upload firmware directory
-      uses: actions/upload-artifact@main
-      if: steps.organize.outputs.status == 'success' && !cancelled()
-      with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: ${{ env.FIRMWARE }}
-
-    - name: Generate release tag
-      id: tag
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      run: |
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
-        touch release.txt
-        echo "::set-output name=status::success"
+    
     - name: Upload firmware to release
       uses: softprops/action-gh-release@v1
       if: steps.tag.outputs.status == 'success' && !cancelled()
