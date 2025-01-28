@@ -5,14 +5,8 @@ name: IPQ60XX-ALL
  # schedule:
   # - cron: 0 19 * * *
 on:
- repository_dispatch:
- workflow_dispatch:
-  inputs:
-    ssh:
-     description: 'SSH connection to Actions'
-     required: false
-     default: 'false'
-
+  repository_dispatch:
+  workflow_dispatch:
 env:
   REPO_URL: https://github.com/LiBwrt-op/openwrt-6.x.git
   REPO_BRANCH: main
