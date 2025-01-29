@@ -127,87 +127,51 @@ jobs:
       if: (!cancelled())
       run: df -hT
 
-    #- name: Upload Bin Directory(上传固件)
-    #  if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
-    #  uses: actions/upload-artifact@main
-    #  with:
-    #    name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
-       # path: ${{ env.OPENWRT_PATH }}/bin
-
-   # - name: Organize Files(整理文件)
-    #  if: steps.compile.outputs.status == 'success'
-   #   run: |
-   #     cd $OPENWRT_PATH/bin/targets/*/*
-    #    cat sha256sums
-    #    cp $OPENWRT_PATH/.config build.config
-    #    mv -f $OPENWRT_PATH/bin/packages/*/*/*.apk packages
-     #   tar -zcf Packages.tar.gz packages
-    #    rm -rf packages feeds.buildinfo version.buildinfo
-      #  echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
-
-   # - name: Upload Firmware To Artifact(将固件上传到Artifact)
-   #   if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
-    #  uses: actions/upload-artifact@main
-    #  with:
-    #    name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
-    #    path: ${{ env.FIRMWARE_PATH }}
-
-   # - name: Upload Firmware To Release(发布固件)
-    #  if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
-   #   uses: ncipollo/release-action@v1
-   #   with:
-    #    name: R${{ env.DATE }} for ${{ env.FIRMWARE_TAG }}
-    #    allowUpdates: true
-   #     tag: ${{ env.FIRMWARE_TAG }}
-    #    token: ${{ secrets.GITHUB_TOKEN }}
-    #    artifacts: ${{ env.FIRMWARE_PATH }}/*
-     
-     #  body: |
-    #      **This is OpenWrt Firmware for ${{ env.FIRMWARE_TAG }}**
-      #    ### 📒 固件信息(带WIFI)
-        #  - 这是1G内存带WIFI以及NSS的6.6内核固件(含docker）
-        #  - 💻 这是 ${{ env.FIRMWARE_TAG }} 平台使用的 OpenWrt 固件
-        #  - ⚽ 固件源码: ${{ env.REPO_URL }}
-       #   - 💝 源码分支: ${{ env.REPO_BRANCH }}
-        #  - 🌐 默认地址: 192.168.1.1
-        #  - 🔑 默认密码: password
-        #  ### 🧊 固件版本
-        #  - 固件编译前最后一次➦[主源码](${{ env.REPO_URL }})更新记录
-        #  - ${{ env.VERSION_INFO }}
-    
-    - name: 上传bin目录下的软件包
-      uses: actions/upload-artifact@master
+    - name: Upload Bin Directory(上传固件)
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      uses: actions/upload-artifact@main
       with:
-        name: OpenWrt_packages${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: openwrt/bin/packages
+        name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
+        path: ${{ env.OPENWRT_PATH }}/bin
 
-    - name: 文件整理
-      id: organize
-      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+    - name: Organize Files(整理文件)
+      if: steps.compile.outputs.status == 'success'
       run: |
-        cd openwrt/bin/targets/*/*
-        rm -rf packages
-        echo "::set-env name=FIRMWARE::$PWD"
-        echo "::set-output name=status::success"
+        cd $OPENWRT_PATH/bin/targets/*/*
+        cat sha256sums
+        cp $OPENWRT_PATH/.config build.config
+        mv -f $OPENWRT_PATH/bin/packages/*/*/*.apk packages
+        tar -zcf Packages.tar.gz packages
+        rm -rf packages feeds.buildinfo version.buildinfo
+        echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
-    - name: 上传固件目录
-      uses: actions/upload-artifact@master
-      if: steps.organize.outputs.status == 'success' && !cancelled()
+    - name: Upload Firmware To Artifact(将固件上传到Artifact)
+      if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE != 'true'
+      uses: actions/upload-artifact@main
       with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: ${{ env.FIRMWARE }}
+        name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
+        path: ${{ env.FIRMWARE_PATH }}
 
-    - name: 上传固件至 cowtransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer cow --block 2621440 -s -p 64 --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
-        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
-
-    - name: 上传固件至 WeTransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
-        echo "::warning file=wetransfer.com::$(cat wetransfer.log | grep https)"
+    - name: Upload Firmware To Release(发布固件)
+      if: steps.compile.outputs.status == 'success' && env.FIRMWARE_RELEASE == 'true'
+      uses: ncipollo/release-action@v1
+      with:
+        name: R${{ env.DATE }} for ${{ env.FIRMWARE_TAG }}
+        allowUpdates: true
+        tag: ${{ env.FIRMWARE_TAG }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        artifacts: ${{ env.FIRMWARE_PATH }}/*
+     
+        body: |
+          **This is OpenWrt Firmware for ${{ env.FIRMWARE_TAG }}**
+          ### 📒 固件信息(带WIFI)
+          - 这是1G内存不带WIFI以及NSS的6.6内核固件(含docker）
+          - 💻 这是 ${{ env.FIRMWARE_TAG }} 平台使用的 OpenWrt 固件
+          - ⚽ 固件源码: ${{ env.REPO_URL }}
+          - 💝 源码分支: ${{ env.REPO_BRANCH }}
+          - 🌐 默认地址: 192.168.0.1
+          - 🔑 默认密码: password
+          ### 🧊 固件版本
+          - 固件编译前最后一次➦[主源码](${{ env.REPO_URL }})更新记录
+          - ${{ env.VERSION_INFO }}
+  
